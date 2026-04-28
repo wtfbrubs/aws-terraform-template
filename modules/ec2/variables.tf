@@ -34,6 +34,28 @@ variable "subnet_id" {
 }
 
 variable "instance_name" {
-  type        = string
+  type    = string
   default = "ec2-exemplo"
+}
+
+# Chave pública SSH para o key pair da instância.
+# Nunca coloque o valor diretamente aqui — passe via tfvars ou variável de ambiente.
+# Geração local: ssh-keygen -t rsa -b 4096 -f ~/.ssh/minha-chave
+variable "public_key" {
+  description = "Chave pública SSH para acesso à instância"
+  type        = string
+}
+
+# Portas TCP abertas no security group. Por padrão restringe a SSH, HTTP e HTTPS.
+# Sobrescreva conforme necessário para cada ambiente.
+variable "ingress_ports" {
+  description = "Portas TCP liberadas no security group da instância"
+  type        = list(number)
+  default     = [22, 80, 443]
+}
+
+variable "ingress_cidrs" {
+  description = "CIDRs com acesso às portas de ingress"
+  type        = list(string)
+  default     = ["0.0.0.0/0"]
 }

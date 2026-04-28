@@ -8,8 +8,9 @@ resource "aws_cloudtrail" "cloudtrail-auditoria" {
 }
 
 resource "aws_s3_bucket" "cloudtrail-auditoria" {
-  bucket        = "CLIENTE-cloudtrail"
-  force_destroy = true
+  bucket = "CLIENTE-cloudtrail"
+  # force_destroy = false (padrão) — bucket de auditoria não deve ser deletável
+  # facilmente. Para destruir o ambiente, remova os objetos manualmente antes.
 }
 
 data "aws_iam_policy_document" "cloudtrail-auditoria" {

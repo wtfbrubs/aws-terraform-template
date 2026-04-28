@@ -8,6 +8,54 @@
 
 Template de infraestrutura AWS gerenciada com Terraform, voltado para ambientes de produção e sandbox em contas AWS da região `sa-east-1`. Inclui pipeline GitLab CI e GitHub Actions com estimativa de custo via Infracost.
 
+## Segurança
+
+Decisões de segurança aplicadas neste template e o motivo de cada uma:
+
+### Secrets nunca em código (`modules/ecs-service`)
+Variáveis de ambiente sensíveis (senhas, tokens, connection strings) **não são passadas via `environment`** na task definition do ECS. Use `container_secrets` com ARNs do Secrets Manager — o valor é injetado em runtime e nunca aparece no plano do Terraform nem nos logs do CloudWatch.
+
+```hcl
+container_secrets = [
+  { name = "DATABASE_PASSWORD", valueFrom = "arn:aws:secretsmanager:sa-east-1:123456789:secret:db-pass-XxXxXx" }
+]
+```
+
+O execution role do ECS já tem política para `secretsmanager:GetSecretValue`, `ssm:GetParameters` e `kms:Decrypt`. Em produção, restrinja o `Resource` da policy aos ARNs específicos dos secrets do serviço.
+
+### Chave SSH por variável (`modules/ec2`, `modules/ec2-crons`)
+A chave pública SSH **não está hardcoded no código**. É passada via variável `ec2_public_key` e deve vir do `terraform.tfvars` (que está no `.gitignore`). Isso evita que chaves de acesso de ambientes diferentes vazem para o repositório.
+
+### Security group do RDS restrito ao CIDR da VPC (`modules/rds`)
+O banco de dados aceita conexões apenas do bloco CIDR interno da VPC (ex: `100.121.0.0/16`), não de `0.0.0.0/0`. O valor é propagado automaticamente via `module.vpc.vpc_cidr_block`. O banco nunca deve ser acessível pela internet.
+
+### Security group do EC2 configurável por variável (`modules/ec2`)
+Em vez de liberar todo o tráfego (`protocol = -1`), o security group usa um `dynamic` block com a variável `ingress_ports`. O padrão é `[22, 80, 443]`. Sobrescreva ao instanciar o módulo para abrir apenas o que o ambiente precisa.
+
+### Bucket do CloudTrail sem `force_destroy` (`modules/cloudtrail`)
+O bucket de auditoria **não pode ser destruído** com `terraform destroy` enquanto tiver objetos. Isso é intencional — logs de auditoria são a última linha de defesa em investigações de segurança. Para destruir o ambiente, remova os objetos manualmente antes.
+
+### Senha do RDS gerenciada pelo Secrets Manager (`modules/rds`)
+`manage_master_user_password = true` delega a criação, armazenamento e **rotação automática** da senha master ao Secrets Manager. O Terraform nunca vê a senha em texto plano, e ela não aparece no state file.
+
+### Account ID via data source (`modules/iam/produtivo`)
+O ID da conta AWS nas policies IAM é buscado dinamicamente com `data "aws_caller_identity"` em vez de estar hardcoded. Isso faz o template funcionar em qualquer conta sem modificação.
+
+### `.gitignore` para arquivos sensíveis
+O `.gitignore` bloqueia commit acidental de:
+- `.terraform/` — binários dos providers (até centenas de MB)
+- `*.tfstate` / `*.tfstate.backup` — podem conter senhas e dados da infraestrutura em texto plano
+- `*.tfvars` — contém chaves SSH, tokens e outros segredos
+- `tfplan` / `plan.json` — plano binário que também pode conter dados sensíveis
+
+### OIDC no EKS para IRSA (`modules/eks`)
+Em vez de usar instance profiles ou credenciais estáticas nos pods, o módulo EKS configura um **OIDC Provider**. Isso habilita IRSA (IAM Roles for Service Accounts): cada pod pode assumir uma IAM Role específica via token do Kubernetes, sem compartilhar credenciais entre serviços.
+
+### Criptografia em repouso
+Todos os volumes EBS (EC2 e ec2-crons), o banco RDS e os buckets S3 usam **KMS dedicado** por recurso. O EFS também tem criptografia habilitada. Isso garante que dados em disco sejam ilegíveis mesmo em caso de acesso físico ao storage.
+
+---
+
 ## Visão Geral
 
 ```

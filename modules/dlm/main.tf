@@ -149,4 +149,4 @@ resource "aws_dlm_lifecycle_policy" "mensal12" {
   tags = {
     Name = "Mensal12"
   }
-}cp
+}

@@ -47,11 +47,13 @@ resource "aws_db_subnet_group" "db_sub_grp" {
 resource "aws_security_group" "rds_sg" {
   vpc_id      = var.vpc_id
   name = format("%s-rds-sg", var.rds_name)
+  # Acesso restrito ao CIDR da VPC — o banco não deve ser acessível
+  # de fora da rede privada. Recebe module.vpc.vpc_cidr_block via variável.
   ingress {
-    from_port       = 3306
-    to_port         = 3306
-    protocol        = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr_block]
   }
   egress {
     from_port   = 0

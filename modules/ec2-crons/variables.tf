@@ -34,6 +34,13 @@ variable "subnet_id" {
 }
 
 variable "instance_name" {
-  type        = string
+  type    = string
   default = "ec2-exemplo"
+}
+
+# Chave pública SSH para o key pair da instância.
+# Nunca coloque o valor diretamente aqui — passe via tfvars ou variável de ambiente.
+variable "public_key" {
+  description = "Chave pública SSH para acesso à instância"
+  type        = string
 }

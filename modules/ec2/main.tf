@@ -1,7 +1,7 @@
 
 resource "aws_key_pair" "key" {
   key_name   = format("kp-%s", var.instance_name)
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDicBAmfnkLskp2+fBRc12tNJeIe7nejlRc80Euvg5kHHaydxguELQXodB7D0I7Gv2hubRxENREpl+OkA89hUMuxtq1hX+48mf2I8gDldUjmnp9u4OgSiTV1gHhLDViVezB1UNcnIm8a1R3oiVq+2AirIh8ucnMt2OdOp0nwyns8KotyE00v9VNOPwuNB0MbM1WnlTIASQgLhPBL383lekR4ooFHBlJ8Q+FrY1HcvH5XQk5WUBP1rGGenTmuOgjIsXdSvoDOVYkWPwsZH2g6JLsMQZZUZw4GhGk77gvbZ5c2fWS3J629QPtpfVOhIpkENVFWbY02H6vNer/W5gBksY/ gasfacil-sandbox-2023-12-05"
+  public_key = var.public_key
 }
 
 
@@ -13,17 +13,22 @@ resource "aws_security_group" "ec2_sg" {
   vpc_id      = var.vpc_id
 
   egress {
+    from_port   = 0
+    to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-    from_port = "0"
-    to_port = "0"
   }
 
-  ingress {
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    from_port = "0"
-    to_port = "0"
+  # Portas abertas configuradas via variável ingress_ports (padrão: 22, 80, 443).
+  # Sobrescreva ao instanciar o módulo para abrir apenas o necessário.
+  dynamic "ingress" {
+    for_each = var.ingress_ports
+    content {
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = var.ingress_cidrs
+    }
   }
 }
 

@@ -1,0 +1,36 @@
+# ============================================================
+# terraform.tfvars.example
+#
+# Copie este arquivo para terraform.tfvars e preencha os valores.
+# O arquivo terraform.tfvars está no .gitignore — nunca o commite,
+# pois pode conter dados sensíveis como chaves SSH e tokens.
+#
+# Como usar:
+#   cp terraform.tfvars.example terraform.tfvars
+#   # edite terraform.tfvars com os valores do ambiente
+#   terraform init && terraform plan
+# ============================================================
+
+# ------ Identidade do ambiente ------
+
+# Prefixo usado em todos os recursos (ex: "minha-empresa-prod", "minha-empresa-staging")
+alias = "meu-ambiente"
+
+# Região AWS onde os recursos serão criados
+aws_region = "sa-east-1"
+
+# Nome da VPC
+vpc_name = "vpc-meu-ambiente"
+
+# Domínio principal registrado no Route53 (usado no ACM e nos DNS dos serviços)
+domain = "meudominio.com.br"
+
+
+# ------ EC2 ------
+
+# Cole aqui o conteúdo da sua chave pública SSH.
+# Para gerar: ssh-keygen -t rsa -b 4096 -f ~/.ssh/minha-chave
+# Depois: cat ~/.ssh/minha-chave.pub
+#
+# NUNCA cole a chave PRIVADA aqui.
+ec2_public_key = "ssh-rsa AAAA... seu-usuario@seu-host"

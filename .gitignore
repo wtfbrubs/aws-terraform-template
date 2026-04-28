@@ -1,0 +1,36 @@
+# Diretório de plugins e módulos baixados pelo terraform init
+# Nunca commitar — pode conter binários de vários GBs
+.terraform/
+
+# Arquivo de lock de versões dos providers — DEVE ser commitado
+# para garantir que todos usem exatamente as mesmas versões
+!.terraform.lock.hcl
+
+# Estado local (quando não há backend remoto configurado)
+# Com backend S3 esses arquivos não aparecem localmente, mas por segurança
+*.tfstate
+*.tfstate.backup
+
+# Arquivo de variáveis — pode conter senhas, tokens e chaves
+# Use terraform.tfvars.example como referência e crie o .tfvars localmente
+*.tfvars
+*.tfvars.json
+
+# Plano binário gerado pelo terraform plan
+# É passado como artefato no CI/CD; localmente pode conter dados sensíveis
+tfplan
+plan.json
+
+# Arquivos de override (uso local para sobrescrever valores sem afetar o repo)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Configuração local do CLI do Terraform
+.terraformrc
+terraform.rc
+
+# Arquivo de crash do Terraform
+crash.log
+crash.*.log

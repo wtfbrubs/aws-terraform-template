@@ -1,4 +1,9 @@
 
+# Busca o ID da conta AWS atual dinamicamente.
+# Evita hardcodar account IDs no código, o que causaria falhas ao usar
+# o template em contas diferentes.
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_role" "basic_role" {
   name = "BasicAccessRole"
 
@@ -8,7 +13,7 @@ resource "aws_iam_role" "basic_role" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "681870745616"
+          AWS = data.aws_caller_identity.current.account_id
         },
         Action = "sts:AssumeRole",
         Condition = {
@@ -50,7 +55,7 @@ resource "aws_iam_role" "admin_role" {
       {
         Effect = "Allow",
         Principal = {
-          AWS = "681870745616"
+          AWS = data.aws_caller_identity.current.account_id
         },
         Action = "sts:AssumeRole",
         Condition = {

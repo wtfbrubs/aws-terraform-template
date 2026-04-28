@@ -36,24 +36,11 @@ resource "aws_ecs_task_definition" "task" {
   container_definitions = jsonencode([{
     name  = var.container_name
     image = var.container_image
-    environment = [
-      {
-        name  = "DATABASE_PASSWORD",
-        value = "ork7mJeqb7AdabiVFrCE"
-      },
-      {
-        name  = "DATABASE_USER",
-        value = "gasfacil24h_bi"
-      },
-      {
-        name  = "DATABASE_DB",
-        value = "gasfacil24h_bi"
-      },
-       {
-        name  = "DATABASE_HOST",
-        value = "gasfacil-sandbox.c9tdaub5e7bd.sa-east-1.rds.amazonaws.com"
-      }
-    ]    
+    # Variáveis não-sensíveis (host, nome do banco, porta, etc.)
+    environment = var.container_environment
+    # Segredos via Secrets Manager ou SSM — nunca em environment.
+    # O execution role (módulo ecs) já tem permissão para lê-los.
+    secrets = var.container_secrets
     portMappings = [{
       containerPort = var.container_port
       hostPort      = var.container_port
@@ -144,7 +131,7 @@ resource "aws_lb_listener_rule" "host_based_routing" {
 
 resource "aws_cloudwatch_log_group" "log_group" {
   name = format("/ecs/%s",var.service_name)
-  retention_in_days = 3  # Define a retenção de logs para 30 dias
+  retention_in_days = 30
 }
 
 

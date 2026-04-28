@@ -2,7 +2,7 @@
 
 resource "aws_key_pair" "key" {
   key_name   = format("kp-%s", var.instance_name)
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfIw+tKTeVYGgdEEthvpBGyRpUM+d6Ot6wxHzSveJTjpluanchyjGz4VU8Sdc65dbH8oiDb20tpQsoz4zBqTCxqIfLPpxClZgQQjo7+EHzqRI1RtO6nxMXB9N9wCnHd2DRqm0H/XXG3qLdGuwHll6NYhjJYPSHy92mAMUOalIveqTgiq4VfLTSpT3F3QyVWltjolnwQ0isqTNE0T/gdrbFn4wqcmcs8WzjlvXAHGYF1THZB58wk5HIPGV4JqSsulCkaX79/tj5xsSpfXvDrx2DWyN38fpK55kttYGEvRcYzQM904ru5RF9w5lZLEcZBpBnmfdAJHMhRWP8Eh/ydlN/ gasfacil-prod-2023-12-13"
+  public_key = var.public_key
 }
 
 
