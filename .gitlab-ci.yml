@@ -1,0 +1,49 @@
+stages:
+  - plan
+  - cost-estimate
+  - apply
+
+variables:
+  AWS_DEFAULT_REGION: sa-east-1  # ou a região que você está utilizando
+
+# validate:
+#   # Imagem pública oficial da HashiCorp. Trocar por imagem privada se necessário (ex: imagem interna com AWS CLI + Infracost).
+#   image: hashicorp/terraform:1.9
+#   stage: validate
+#   script:
+#     - terraform init
+#     - terraform validate
+#   # only:
+#   #   - merge_requests
+
+plan:
+  image: gru.ocir.io/grmttff4rmti/conteiner-terraform-aws:c2868404
+  stage: plan
+  before_script:
+  - export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+  - export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+  - export AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
+  # - export TF_LOG=DEBUG
+  script:
+
+    - terraform init
+    - terraform validate
+    - terraform plan -out=tfplan
+    - terraform show -json tfplan > plan.json
+    - infracost breakdown --path plan.json --format table
+    - infracost diff --path plan.json
+    
+  artifacts:
+    paths:
+      - tfplan
+
+
+apply:
+  image: gru.ocir.io/grmttff4rmti/conteiner-terraform-aws:c2868404
+  stage: apply
+  script:
+    - terraform init
+    - terraform apply -input=false tfplan
+  when: manual
+  only:
+    - master
