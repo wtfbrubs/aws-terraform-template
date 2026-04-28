@@ -12,7 +12,7 @@ provider "aws" {
 }
 
 module "iam" {
-  source = "./iam"
+  source = "./iam/produtivo"
   alias  = var.alias
 }
 
