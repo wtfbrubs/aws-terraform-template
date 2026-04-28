@@ -20,9 +20,9 @@ variable "public_subnet_ids" {
 }
 
 variable "kubernetes_version" {
-  description = "Versão do Kubernetes"
+  description = "Versão do Kubernetes. Versões suportadas pelo EKS: 1.29, 1.30, 1.31, 1.32. Verifique em: https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html"
   type        = string
-  default     = "1.30"
+  default     = "1.32"
 }
 
 variable "endpoint_public_access" {

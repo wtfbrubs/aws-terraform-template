@@ -3,7 +3,7 @@
 [![Terraform](https://github.com/wtfbrubs/aws-terraform-template/actions/workflows/terraform.yml/badge.svg)](https://github.com/wtfbrubs/aws-terraform-template/actions/workflows/terraform.yml)
 [![Terraform Version](https://img.shields.io/badge/terraform-%3E%3D1.9-623CE4?logo=terraform&logoColor=white)](https://developer.hashicorp.com/terraform)
 [![AWS Provider](https://img.shields.io/badge/aws_provider-~%3E5.0-FF9900?logo=amazonaws&logoColor=white)](https://registry.terraform.io/providers/hashicorp/aws/latest)
-[![Kubernetes](https://img.shields.io/badge/kubernetes-1.30-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![Kubernetes](https://img.shields.io/badge/kubernetes-1.32-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
 [![Region](https://img.shields.io/badge/region-sa--east--1-232F3E?logo=amazonaws&logoColor=white)](https://aws.amazon.com/pt/about-aws/global-infrastructure/regions_az/)
 
 Template de infraestrutura AWS gerenciada com Terraform, voltado para ambientes de produção e sandbox em contas AWS da região `sa-east-1`. Inclui pipeline GitLab CI e GitHub Actions com estimativa de custo via Infracost.
