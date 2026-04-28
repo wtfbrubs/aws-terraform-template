@@ -76,6 +76,19 @@ module "ecs" {
   vpc_id = module.vpc.vpc_id
 }
 
+# module "eks" {
+#   source             = "./eks"
+#   alias              = var.alias
+#   vpc_id             = module.vpc.vpc_id
+#   private_subnet_ids = module.vpc.private_subnets_ids
+#   public_subnet_ids  = module.vpc.public_subnets_ids
+#   kubernetes_version = "1.30"
+#   node_instance_type = "t3.medium"
+#   node_desired_size  = 2
+#   node_min_size      = 1
+#   node_max_size      = 4
+# }
+
 module "ecs_service_bi" {
   source              = "./ecs-service"
   service_name        = format("%s-%s",var.alias, module.codecommit_bi.repo_name)

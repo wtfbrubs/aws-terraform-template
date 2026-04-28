@@ -99,6 +99,29 @@ Banco de dados MySQL 8.0 gerenciado:
 - Backup diário às 04:00 UTC com retenção de 7 dias
 - `deletion_protection = true` — requer desativação manual antes de destruir
 
+### `eks`
+Cluster Kubernetes gerenciado (EKS):
+- Cluster com logs do control plane habilitados (api, audit, authenticator, controllerManager, scheduler) — retenção de 7 dias no CloudWatch
+- Endpoint privado sempre habilitado; endpoint público configurável via `endpoint_public_access`
+- Managed Node Group em subnets privadas com autoscaling (`min`/`desired`/`max`)
+- IAM Roles separadas para cluster e nodes com policies mínimas necessárias
+- OIDC Provider configurado automaticamente para habilitar **IRSA** (IAM Roles for Service Accounts)
+- Addons essenciais provisionados: `vpc-cni`, `kube-proxy`, `coredns`
+
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `kubernetes_version` | `1.30` | Versão do Kubernetes |
+| `endpoint_public_access` | `true` | Expõe a API publicamente |
+| `node_instance_type` | `t3.medium` | Tipo de instância dos nodes |
+| `node_disk_size` | `20` | Disco dos nodes em GB |
+| `node_desired_size` | `2` | Nodes desejados |
+| `node_min_size` | `1` | Mínimo de nodes |
+| `node_max_size` | `4` | Máximo de nodes |
+
+> O `desired_size` é ignorado no lifecycle para não conflitar com o Cluster Autoscaler.
+
+**Outputs disponíveis:** `cluster_name`, `cluster_id`, `cluster_endpoint`, `cluster_certificate_authority`, `oidc_provider_arn`, `oidc_provider_url`, `node_role_arn`.
+
 ### `ecs`
 Cluster ECS e infraestrutura de suporte:
 - Cluster com o nome definido por `alias`
