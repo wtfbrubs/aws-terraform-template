@@ -1,0 +1,17 @@
+repos:
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.96.1
+    hooks:
+      # Formata todos os arquivos .tf automaticamente
+      - id: terraform_fmt
+
+      # Valida sintaxe sem backend (não precisa de credenciais AWS)
+      - id: terraform_validate
+        args:
+          - --args=-no-color
+          - --tf-init-args=-backend=false
+
+      # Roda tflint com o ruleset AWS em cada módulo
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl

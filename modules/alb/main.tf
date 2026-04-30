@@ -5,15 +5,15 @@ resource "aws_lb" "alb" {
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = var.subnet_ids
 
-  enable_deletion_protection = false
+  enable_deletion_protection = true
 }
 
 
 
 resource "aws_security_group" "alb_sg" {
-  name        = "alb-security-group"
+  name        = format("%s-sg", var.alb_name)
   description = "Security group for ALB"
-  vpc_id      = var.vpc_id  # Substitua pelo ID da sua VPC
+  vpc_id      = var.vpc_id
 
   # Regra de ingresso para HTTP
   ingress {
@@ -40,7 +40,7 @@ resource "aws_security_group" "alb_sg" {
   }
 
   tags = {
-    Name = "alb-security-group"
+    Name = format("%s-sg", var.alb_name)
   }
 }
 
@@ -81,11 +81,11 @@ resource "aws_lb_listener" "listener80" {
 }
 
 resource "aws_lb_listener" "listener443" {
-  load_balancer_arn = aws_lb.alb.arn  # Certifique-se de que este é o ARN do seu ALB
+  load_balancer_arn = aws_lb.alb.arn # Certifique-se de que este é o ARN do seu ALB
   port              = "443"
   protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-2016-08"  # Escolha a política de segurança SSL apropriada
-  certificate_arn   = var.cert_arn  # Substitua pelo ARN do seu certificado ACM
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = var.cert_arn
 
   default_action {
     type = "fixed-response"

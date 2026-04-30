@@ -18,6 +18,7 @@ module "iam" {
 
 module "cloudtrail" {
   source = "./cloudtrail"
+  alias  = var.alias
 }
 
 module "dlm" {
@@ -26,7 +27,6 @@ module "dlm" {
 
 module "vpc" {
   source             = "./vpc"
-  region             = var.aws_region
   vpc_name           = var.vpc_name
   availability_zones = ["sa-east-1a", "sa-east-1b", "sa-east-1c", "sa-east-1d"]
 }
@@ -50,7 +50,7 @@ module "rds" {
   vpc_id             = module.vpc.vpc_id
   private_subnet_ids = module.vpc.private_subnets_ids
   # Restringe o security group do RDS ao tráfego interno da VPC
-  vpc_cidr_block     = module.vpc.vpc_cidr_block
+  vpc_cidr_block = module.vpc.vpc_cidr_block
 }
 
 # Bug corrigido: source era "./codecommit-bi" (diretório inexistente)
@@ -109,14 +109,15 @@ module "ecs_service_bi" {
   alias              = var.alias
   vpc_id             = module.vpc.vpc_id
   listener_arn       = module.alb.alb_listener443_arn
+  alb_sg_id          = module.alb.alb_sg_id
   target_group_port  = 80
   aws_region         = var.aws_region
   app_dns            = format("bi.%s", var.domain)
   zone_id            = module.acm.zone_id
   alb_dns_name       = module.alb.alb_dns_name
   max_capacity       = 1
-  mem_treshold       = 90
-  cpu_treshold       = 80
+  mem_threshold      = 90
+  cpu_threshold      = 80
 
   # Passe variáveis de ambiente não-sensíveis aqui.
   # Exemplo: [{ name = "DATABASE_HOST", value = "meu-rds.sa-east-1.rds.amazonaws.com" }]

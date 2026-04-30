@@ -1,30 +1,31 @@
 resource "aws_db_instance" "rds_db" {
-  allocated_storage    = 20
-  storage_type         = "gp3"
-  engine               = "mysql"
-  engine_version       = "8.0.33"
-  instance_class       = "db.t3.micro"
-  identifier           = var.rds_name
-  username             = var.user_name
-#   password             = var.user_pass // Use uma maneira segura para definir a senha
-#   parameter_group_name = "default.mysql8.0"
-  db_subnet_group_name = aws_db_subnet_group.db_sub_grp.id // Substitua pelo nome do seu DB Subnet Group
-  vpc_security_group_ids = [aws_security_group.rds_sg.id] // Substitua pelo seu Security Group ID
-  multi_az               = false
-  backup_retention_period = 7
-  backup_window           = "04:00-04:30"
-  maintenance_window      = "Mon:00:00-Mon:03:00"
-  auto_minor_version_upgrade = true
-  deletion_protection       = true
-  storage_encrypted         = true
-  manage_master_user_password = true
+  allocated_storage = 20
+  storage_type      = "gp3"
+  engine            = "mysql"
+  engine_version    = "8.0.33"
+  instance_class    = "db.t3.micro"
+  identifier        = var.rds_name
+  username          = var.user_name
+  #   password             = var.user_pass // Use uma maneira segura para definir a senha
+  #   parameter_group_name = "default.mysql8.0"
+  db_subnet_group_name          = aws_db_subnet_group.db_sub_grp.id // Substitua pelo nome do seu DB Subnet Group
+  vpc_security_group_ids        = [aws_security_group.rds_sg.id]    // Substitua pelo seu Security Group ID
+  multi_az                      = false
+  backup_retention_period       = 7
+  backup_window                 = "04:00-04:30"
+  maintenance_window            = "Mon:00:00-Mon:03:00"
+  auto_minor_version_upgrade    = true
+  deletion_protection           = true
+  storage_encrypted             = true
+  manage_master_user_password   = true
   master_user_secret_kms_key_id = aws_kms_key.db_kms.key_id
   # Configurações de monitoramento e logs
-  monitoring_interval    = 60
-  monitoring_role_arn    = aws_iam_role.rds_monitoring_role.arn // Substitua pelo ARN da sua IAM role
+  monitoring_interval             = 60
+  monitoring_role_arn             = aws_iam_role.rds_monitoring_role.arn // Substitua pelo ARN da sua IAM role
   enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
-  skip_final_snapshot = true
-  apply_immediately = true
+  skip_final_snapshot             = false
+  final_snapshot_identifier       = format("%s-final-snapshot", var.rds_name)
+  apply_immediately               = false
 
   # Configuração de rede
   publicly_accessible = false
@@ -36,7 +37,13 @@ resource "aws_db_instance" "rds_db" {
 
 
 resource "aws_kms_key" "db_kms" {
-  description = "kms key para o recurso"
+  description             = format("KMS key para RDS %s", var.rds_name)
+  deletion_window_in_days = 10
+}
+
+resource "aws_kms_alias" "db_kms" {
+  name          = format("alias/%s-rds", var.rds_name)
+  target_key_id = aws_kms_key.db_kms.key_id
 }
 
 resource "aws_db_subnet_group" "db_sub_grp" {
@@ -45,8 +52,8 @@ resource "aws_db_subnet_group" "db_sub_grp" {
 }
 
 resource "aws_security_group" "rds_sg" {
-  vpc_id      = var.vpc_id
-  name = format("%s-rds-sg", var.rds_name)
+  vpc_id = var.vpc_id
+  name   = format("%s-rds-sg", var.rds_name)
   # Acesso restrito ao CIDR da VPC — o banco não deve ser acessível
   # de fora da rede privada. Recebe module.vpc.vpc_cidr_block via variável.
   ingress {
@@ -81,7 +88,7 @@ resource "aws_iam_role" "rds_monitoring_role" {
 
 }
 
-resource "aws_iam_role_policy_attachment" "test-attach" {
+resource "aws_iam_role_policy_attachment" "rds_monitoring_attach" {
   role       = aws_iam_role.rds_monitoring_role.name
   policy_arn = aws_iam_policy.monitoring_policy.arn
 }
@@ -94,32 +101,32 @@ resource "aws_iam_policy" "monitoring_policy" {
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.
   policy = jsonencode({
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "EnableCreationAndManagementOfRDSCloudwatchLogGroups",
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogGroup",
-                "logs:PutRetentionPolicy"
-            ],
-            "Resource": [
-                "arn:aws:logs:*:*:log-group:RDS*"
-            ]
-        },
-        {
-            "Sid": "EnableCreationAndManagementOfRDSCloudwatchLogStreams",
-            "Effect": "Allow",
-            "Action": [
-                "logs:CreateLogStream",
-                "logs:PutLogEvents",
-                "logs:DescribeLogStreams",
-                "logs:GetLogEvents"
-            ],
-            "Resource": [
-                "arn:aws:logs:*:*:log-group:RDS*:log-stream:*"
-            ]
-        }
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Sid" : "EnableCreationAndManagementOfRDSCloudwatchLogGroups",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogGroup",
+          "logs:PutRetentionPolicy"
+        ],
+        "Resource" : [
+          "arn:aws:logs:*:*:log-group:RDS*"
+        ]
+      },
+      {
+        "Sid" : "EnableCreationAndManagementOfRDSCloudwatchLogStreams",
+        "Effect" : "Allow",
+        "Action" : [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams",
+          "logs:GetLogEvents"
+        ],
+        "Resource" : [
+          "arn:aws:logs:*:*:log-group:RDS*:log-stream:*"
+        ]
+      }
     ]
   })
 }

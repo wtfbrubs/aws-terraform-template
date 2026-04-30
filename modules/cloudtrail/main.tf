@@ -3,12 +3,12 @@ resource "aws_cloudtrail" "cloudtrail-auditoria" {
 
   name                          = "cloudtrail-auditoria"
   s3_bucket_name                = aws_s3_bucket.cloudtrail-auditoria.id
-  s3_key_prefix                 = "CLIENTE"
+  s3_key_prefix                 = var.alias
   include_global_service_events = true
 }
 
 resource "aws_s3_bucket" "cloudtrail-auditoria" {
-  bucket = "CLIENTE-cloudtrail"
+  bucket = format("%s-cloudtrail", var.alias)
   # force_destroy = false (padrão) — bucket de auditoria não deve ser deletável
   # facilmente. Para destruir o ambiente, remova os objetos manualmente antes.
 }
@@ -42,7 +42,7 @@ data "aws_iam_policy_document" "cloudtrail-auditoria" {
     }
 
     actions   = ["s3:PutObject"]
-    resources = ["${aws_s3_bucket.cloudtrail-auditoria.arn}/CLIENTE/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
+    resources = ["${aws_s3_bucket.cloudtrail-auditoria.arn}/${var.alias}/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
 
     condition {
       test     = "StringEquals"

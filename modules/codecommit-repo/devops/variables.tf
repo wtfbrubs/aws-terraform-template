@@ -1,26 +1,30 @@
 variable "repo_name" {
-  description = "nome do repo"
+  description = "Nome do repositório CodeCommit"
+  type        = string
 }
 
 variable "alias" {
-  description = "Alias padrão da conta. Nome do cliente"
+  description = "Alias da conta"
+  type        = string
 }
 
 variable "pipeline_branch" {
-  description = "branch da pipeline"
+  description = "Branch que dispara o pipeline de deploy"
+  type        = string
   default     = "master"
 }
 
 variable "codecommit_repo_arn" {
-  description = "ARN of the CodeCommit repository"
+  description = "ARN do repositório CodeCommit"
   type        = string
 }
 
-
-variable "cluster_name"{
-  description = "nome do cluster"
-}
-variable "service_name"{
-  description = "nome do serviço"
+variable "cluster_name" {
+  description = "Nome do cluster ECS"
+  type        = string
 }
 
+variable "service_name" {
+  description = "Nome do serviço ECS"
+  type        = string
+}

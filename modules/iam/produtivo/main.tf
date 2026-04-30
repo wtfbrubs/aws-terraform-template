@@ -27,8 +27,8 @@ resource "aws_iam_role" "basic_role" {
 }
 
 resource "aws_iam_role_policy" "basic_policy" {
-  name   = "BasicAccessPolicy"
-  role   = aws_iam_role.basic_role.id
+  name = "BasicAccessPolicy"
+  role = aws_iam_role.basic_role.id
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -69,15 +69,15 @@ resource "aws_iam_role" "admin_role" {
 }
 
 resource "aws_iam_role_policy" "admin_policy" {
-  name   = "FullAdminAccessPolicy"
-  role   = aws_iam_role.admin_role.id
+  name = "FullAdminAccessPolicy"
+  role = aws_iam_role.admin_role.id
 
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = "Allow",
-        Action = "*",
+        Effect   = "Allow",
+        Action   = "*",
         Resource = "*"
       },
     ]

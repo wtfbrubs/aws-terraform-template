@@ -4,16 +4,17 @@ variable "efs_name" {
 }
 
 variable "vpc_id" {
-  description = "ID da VPC onde o ALB será criado"
+  description = "ID da VPC onde o EFS será criado"
   type        = string
 }
 
 variable "subnet_ids" {
-  description = "Lista de IDs de subnets para o ALB"
+  description = "Lista de IDs de subnets para os mount targets"
   type        = list(string)
 }
 
 variable "vpc_cidr_block" {
-  description = "CIDR block para a VPC"
+  description = "CIDR block da VPC — restringe o security group do EFS ao tráfego interno"
+  type        = string
   default     = "100.120.0.0/16"
 }

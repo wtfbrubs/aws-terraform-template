@@ -16,17 +16,23 @@ resource "aws_s3_bucket_versioning" "versioning" {
   }
 }
 
-# resource "aws_s3_bucket_public_access_block" "bucket_access_block" {
-#   bucket = aws_s3_bucket.bucket.id
+resource "aws_s3_bucket_public_access_block" "bucket_access_block" {
+  bucket = aws_s3_bucket.bucket.id
 
-#   block_public_acls   = true
-#   block_public_policy = true
-# }
-
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
 
 resource "aws_kms_key" "kmskey" {
   description             = format("Chave da bucket %s", var.bucket_name)
   deletion_window_in_days = 10
+}
+
+resource "aws_kms_alias" "kmskey" {
+  name          = format("alias/s3-%s", var.bucket_name)
+  target_key_id = aws_kms_key.kmskey.key_id
 }
 
 
@@ -50,10 +56,10 @@ resource "aws_iam_policy" "full_access" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = "s3:*",
+        Effect = "Allow",
+        Action = "s3:*",
         Resource = [
-          "${aws_s3_bucket.bucket.arn}",
+          aws_s3_bucket.bucket.arn,
           "${aws_s3_bucket.bucket.arn}/*"
         ]
       },
@@ -78,10 +84,10 @@ resource "aws_iam_policy" "read_write" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = ["s3:ListBucket", "s3:GetObject", "s3:PutObject"],
+        Effect = "Allow",
+        Action = ["s3:ListBucket", "s3:GetObject", "s3:PutObject"],
         Resource = [
-          "${aws_s3_bucket.bucket.arn}",
+          aws_s3_bucket.bucket.arn,
           "${aws_s3_bucket.bucket.arn}/*"
         ]
       },
@@ -106,10 +112,10 @@ resource "aws_iam_policy" "read_only" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = ["s3:GetObject"],
+        Effect = "Allow",
+        Action = ["s3:GetObject"],
         Resource = [
-          "${aws_s3_bucket.bucket.arn}",
+          aws_s3_bucket.bucket.arn,
           "${aws_s3_bucket.bucket.arn}/*"
         ]
       },

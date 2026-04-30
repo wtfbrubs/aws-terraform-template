@@ -1,15 +1,18 @@
 variable "aws_region" {
   description = "AWS region to launch servers."
+  type        = string
   default     = "sa-east-1"
 }
 
 variable "vpc_name" {
-  description = "nome da VPC"
+  description = "Nome da VPC"
+  type        = string
   default     = "vpc-gasfacil"
 }
 
 variable "alias" {
   description = "Alias padrão da conta. Nome do cliente"
+  type        = string
   default     = "meu-ambiente"
 }
 

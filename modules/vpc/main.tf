@@ -1,10 +1,6 @@
-# provider "aws" {
-#   region = var.region
-# }
-
 resource "aws_vpc" "main" {
-  cidr_block          = var.vpc_cidr_block
-  enable_dns_support  = true
+  cidr_block           = var.vpc_cidr_block
+  enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
@@ -28,14 +24,15 @@ resource "aws_subnet" "public" {
 resource "aws_subnet" "private" {
   count = length(var.private_subnet_cidr_blocks)
 
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = var.private_subnet_cidr_blocks[count.index]
-  availability_zone       = var.availability_zones[count.index]
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.private_subnet_cidr_blocks[count.index]
+  availability_zone = var.availability_zones[count.index]
 
   tags = {
     Name = format("%s-private-%02d", var.vpc_name, count.index + 1)
   }
 }
+
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -44,24 +41,27 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
+# Um EIP e um NAT Gateway por AZ pública — evita perda de saída de internet
+# nas subnets privadas caso uma AZ fique indisponível.
 resource "aws_eip" "nat_eip" {
+  count      = length(var.public_subnet_cidr_blocks)
   depends_on = [aws_internet_gateway.igw]
-  domain   = "vpc"
+  domain     = "vpc"
 
   tags = {
-    Name = format("%s-nat-eip", var.vpc_name)
+    Name = format("%s-nat-eip-%02d", var.vpc_name, count.index + 1)
   }
 }
 
 resource "aws_nat_gateway" "nat_gw" {
-  allocation_id = aws_eip.nat_eip.id
-  subnet_id     = aws_subnet.public[0].id
+  count         = length(var.public_subnet_cidr_blocks)
+  allocation_id = aws_eip.nat_eip[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
 
   tags = {
-    Name = format("%s-nat-gw", var.vpc_name)
+    Name = format("%s-nat-gw-%02d", var.vpc_name, count.index + 1)
   }
 }
-
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -82,96 +82,24 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+# Uma route table por subnet privada, cada uma apontando para o NAT da mesma AZ.
+# Se houver mais subnets privadas que NATs, distribui em round-robin.
 resource "aws_route_table" "private" {
+  count  = length(var.private_subnet_cidr_blocks)
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_nat_gateway.nat_gw.id
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_gw[count.index % length(aws_nat_gateway.nat_gw)].id
   }
 
   tags = {
-    Name = format("%s-private", var.vpc_name)
+    Name = format("%s-private-%02d", var.vpc_name, count.index + 1)
   }
 }
 
 resource "aws_route_table_association" "private" {
   count          = length(var.private_subnet_cidr_blocks)
   subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
+  route_table_id = aws_route_table.private[count.index].id
 }
-
-
-
-
-resource "aws_network_acl" "public" {
-  vpc_id = aws_vpc.main.id
-  tags = {
-    Name = format("%s-public", var.vpc_name)
-  }
-}
-
-resource "aws_network_acl_rule" "public_inbound" {
-  network_acl_id = aws_network_acl.public.id
-  rule_number    = 100
-  egress         = false
-  protocol       = "-1"
-  # protocol       = "tcp"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  # from_port      = 22
-  # to_port        = 22
-}
-
-resource "aws_network_acl_rule" "public_outbound" {
-  network_acl_id = aws_network_acl.public.id
-  rule_number    = 100
-  egress         = true
-  protocol       = "-1"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-}
-
-resource "aws_network_acl_association" "public" {
-  count          = length(var.public_subnet_cidr_blocks)
-  network_acl_id = aws_network_acl.public.id
-  subnet_id      = aws_subnet.public[count.index].id
-}
-
-
-
-resource "aws_network_acl" "private" {
-  vpc_id = aws_vpc.main.id
-  tags = {
-    Name = format("%s-private", var.vpc_name)
-  }
-}
-
-resource "aws_network_acl_rule" "private_inbound" {
-  network_acl_id = aws_network_acl.private.id
-  rule_number    = 100
-  egress         = false
-  protocol       = "-1"
-  # protocol       = "tcp"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-  # from_port      = 22
-  # to_port        = 22
-}
-
-resource "aws_network_acl_rule" "private_outbound" {
-  network_acl_id = aws_network_acl.private.id
-  rule_number    = 100
-  egress         = true
-  protocol       = "-1"
-  rule_action    = "allow"
-  cidr_block     = "0.0.0.0/0"
-}
-
-resource "aws_network_acl_association" "private" {
-  count          = length(var.private_subnet_cidr_blocks)
-  network_acl_id = aws_network_acl.private.id
-  subnet_id      = aws_subnet.private[count.index].id
-}
-
-

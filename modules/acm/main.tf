@@ -1,6 +1,6 @@
 
 resource "aws_acm_certificate" "cert" {
-  domain_name = var.dominio
+  domain_name       = var.dominio
   validation_method = "DNS"
 
   subject_alternative_names = [
@@ -29,7 +29,7 @@ resource "aws_route53_record" "records" {
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
     }
-   # Skips the domain if it doesn't contain a wildcard
+    # Skips the domain if it doesn't contain a wildcard
     if length(regexall("\\*\\..+", dvo.domain_name)) > 0
   }
 
@@ -45,7 +45,7 @@ resource "aws_route53_record" "records" {
 
 
 resource "aws_acm_certificate_validation" "cert_val" {
-  certificate_arn         = aws_acm_certificate.cert.arn 
+  certificate_arn         = aws_acm_certificate.cert.arn
   validation_record_fqdns = [for record in aws_route53_record.records : record.fqdn]
 }
 

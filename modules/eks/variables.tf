@@ -3,11 +3,6 @@ variable "alias" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "ID da VPC"
-  type        = string
-}
-
 variable "private_subnet_ids" {
   description = "IDs das subnets privadas onde os nodes serão provisionados"
   type        = list(string)

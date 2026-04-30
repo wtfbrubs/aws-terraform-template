@@ -1,7 +1,7 @@
 variable "alias" {
   description = "Alias padrão da conta. Nome do cliente"
+  type        = string
 }
-
 
 variable "task_family" {
   description = "Família da definição de tarefa"
@@ -53,52 +53,71 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-
 variable "desired_count" {
   description = "Número desejado de instâncias do serviço"
   type        = number
 }
 
 variable "vpc_id" {
+  type = string
+}
+
+variable "alb_sg_id" {
+  description = "ID do security group do ALB — ingress do ECS é restrito a ele"
   type        = string
 }
 
 variable "listener_arn" {
-  type        = string
+  type = string
 }
+
 variable "target_group_port" {
-  description = "Porta do container"
+  description = "Porta do target group"
   type        = number
-} 
+}
+
 variable "aws_region" {
   description = "AWS region to launch servers."
+  type        = string
   default     = "sa-east-1"
 }
 
 variable "app_dns" {
-  description = "dns do app."
-
+  description = "DNS do app."
+  type        = string
 }
+
 variable "zone_id" {
-  description = "zona do route53 para criação do cname automatico."
+  description = "Zona do Route53 para criação do CNAME automático."
+  type        = string
 }
 
 variable "alb_dns_name" {
-  description = "cname do alb."
+  description = "DNS name do ALB."
+  type        = string
 }
 
 variable "max_capacity" {
-  description = "max cap do autoscaling."
+  description = "Capacidade máxima do autoscaling."
+  type        = number
 }
 
-
-variable "mem_treshold" {
-  description = "max cap do autoscaling."
+variable "mem_threshold" {
+  description = "% de memória para acionar scale-out."
+  type        = number
   default     = 80
 }
-variable "cpu_treshold" {
-  description = "max cap do autoscaling."
+
+variable "cpu_threshold" {
+  description = "% de CPU para acionar scale-out."
+  type        = number
   default     = 60
+}
+
+variable "health_check_path" {
+  description = "Path HTTP para o health check do container (requer curl na imagem)."
+  type        = string
+  default     = "/"
 }
 
 # Variáveis de ambiente não-sensíveis injetadas no container.

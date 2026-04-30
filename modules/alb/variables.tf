@@ -13,7 +13,7 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
-variable "cert_arn"{
-  description = "Arn do certficiado validado para ser usado no listener 443 https"
-
+variable "cert_arn" {
+  description = "ARN do certificado ACM validado para o listener HTTPS"
+  type        = string
 }

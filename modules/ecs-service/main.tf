@@ -5,25 +5,24 @@ resource "aws_ecs_service" "service" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets = var.subnet_ids
-    security_groups = [aws_security_group.ecs_service_sg.id]
+    subnets          = var.subnet_ids
+    security_groups  = [aws_security_group.ecs_service_sg.id]
     assign_public_ip = false
   }
+
   load_balancer {
-    target_group_arn = aws_lb_target_group.target_group.arn # Adicione a ARN do Target Group do ALB
-    container_name   = var.container_name    # Nome do container conforme definido na definição de tarefa
-    container_port   = var.container_port    # Porta que o container está ouvindo
+    target_group_arn = aws_lb_target_group.target_group.arn
+    container_name   = var.container_name
+    container_port   = var.container_port
   }
 
   desired_count = var.desired_count
-  // Inclua outras configurações necessárias, como estratégias de implantação, etc.
 
   lifecycle {
     create_before_destroy = true
-    ignore_changes = [task_definition,desired_count]
+    ignore_changes        = [task_definition, desired_count]
   }
 }
-
 
 resource "aws_ecs_task_definition" "task" {
   family                   = var.task_family
@@ -45,9 +44,9 @@ resource "aws_ecs_task_definition" "task" {
       containerPort = var.container_port
       hostPort      = var.container_port
     }]
-    healthCheck  = {
-      command     = ["CMD-SHELL", "exit 0"]
-      # command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}/ || exit 1"]
+    healthCheck = {
+      # Requer que a imagem do container tenha curl instalado.
+      command     = ["CMD-SHELL", "curl -f http://localhost:${var.container_port}${var.health_check_path} || exit 1"]
       interval    = 30
       timeout     = 5
       retries     = 3
@@ -61,41 +60,39 @@ resource "aws_ecs_task_definition" "task" {
         awslogs-stream-prefix = "ecs"
       }
     }
-    
   }])
 }
 
 resource "aws_security_group" "ecs_service_sg" {
   name        = format("%s-sg", var.service_name)
-  description = "Security Group para o servico ECS na porta 80"
+  description = format("Security Group para o servico ECS %s", var.service_name)
   vpc_id      = var.vpc_id
 
+  # Ingress restrito ao security group do ALB — o container nunca é acessível diretamente.
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  # Permite acesso de qualquer IP. Ajuste conforme necessário.
+    from_port       = var.container_port
+    to_port         = var.container_port
+    protocol        = "tcp"
+    security_groups = [var.alb_sg_id]
   }
 
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"  # Permite todo o tráfego de saída
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name = "ecs_service_sg"
+    Name = format("%s-sg", var.service_name)
   }
 }
 
-
-
 resource "aws_lb_target_group" "target_group" {
-  name     = format("%s-tg",var.service_name)
-  port     = var.target_group_port
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = format("%s-tg", var.service_name)
+  port        = var.target_group_port
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
   target_type = "ip"
 
   health_check {
@@ -103,15 +100,12 @@ resource "aws_lb_target_group" "target_group" {
     healthy_threshold   = 3
     unhealthy_threshold = 3
     timeout             = 5
-    path                = "/"
+    path                = var.health_check_path
     protocol            = "HTTP"
     interval            = 30
     matcher             = "200-299"
   }
 }
-
-
-
 
 resource "aws_lb_listener_rule" "host_based_routing" {
   listener_arn = var.listener_arn
@@ -128,13 +122,10 @@ resource "aws_lb_listener_rule" "host_based_routing" {
   }
 }
 
-
 resource "aws_cloudwatch_log_group" "log_group" {
-  name = format("/ecs/%s",var.service_name)
+  name              = format("/ecs/%s", var.service_name)
   retention_in_days = 30
 }
-
-
 
 resource "aws_route53_record" "dns" {
   zone_id = var.zone_id
@@ -144,8 +135,6 @@ resource "aws_route53_record" "dns" {
   records = [var.alb_dns_name]
 }
 
-
-
 resource "aws_appautoscaling_target" "ecs_target" {
   max_capacity       = var.max_capacity
   min_capacity       = var.desired_count
@@ -153,7 +142,6 @@ resource "aws_appautoscaling_target" "ecs_target" {
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
 }
-
 
 resource "aws_appautoscaling_policy" "ecs_policy_memory" {
   name               = format("%s-%s-memory-autoscaling", var.alias, var.service_name)
@@ -167,7 +155,7 @@ resource "aws_appautoscaling_policy" "ecs_policy_memory" {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
 
-    target_value       = var.mem_treshold
+    target_value       = var.mem_threshold
     scale_in_cooldown  = 300
     scale_out_cooldown = 300
   }
@@ -185,7 +173,7 @@ resource "aws_appautoscaling_policy" "ecs_policy_cpu" {
       predefined_metric_type = "ECSServiceAverageCPUUtilization"
     }
 
-    target_value       = var.cpu_treshold
+    target_value       = var.cpu_threshold
     scale_in_cooldown  = 300
     scale_out_cooldown = 300
   }

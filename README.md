@@ -56,6 +56,68 @@ Todos os volumes EBS (EC2 e ec2-crons), o banco RDS e os buckets S3 usam **KMS d
 
 ---
 
+## Prevenção de Drift
+
+Drift é quando a infraestrutura real na AWS diverge do que está no state do Terraform — geralmente causado por mudanças manuais no console ou applies concorrentes. Uma vez que o state diverge da realidade, o próximo `terraform plan` pode propor destruição de recursos que ainda existem, ou ignorar recursos que não existem mais.
+
+### O que este template já faz
+
+| Prática | Onde |
+|---|---|
+| State remoto com criptografia | `backend.tf` — `encrypt = true` |
+| Versões de providers fixadas | `modules/versions.tf` — `~> 5.0` / `~> 4.0` |
+| Versão mínima do Terraform fixada | `modules/versions.tf` — `>= 1.9` |
+| Lock file commitado | `.terraform.lock.hcl` — garante mesmas versões em todos os ambientes |
+| `deletion_protection` no RDS | `modules/rds/main.tf` — impede destroy acidental |
+| Plan obrigatório antes do apply | Pipeline — apply nunca roda sem plan aprovado |
+| Aprovação manual no apply | GitHub Environments / GitLab `when: manual` |
+| Tags em todos os recursos | `default_tags` no provider — facilita identificar recursos fora do Terraform |
+
+### O que ainda falta implementar
+
+#### 1. State locking com DynamoDB (crítico)
+
+Sem locking, dois applies simultâneos podem corromper o `terraform.tfstate`. Adicione ao `backend.tf`:
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "<seu-bucket-de-estado>"
+    key            = "estado/terraform.tfstate"
+    region         = "sa-east-1"
+    encrypt        = true
+    dynamodb_table = "<nome-da-tabela-de-lock>"  # adicionar
+  }
+}
+```
+
+Crie a tabela antes do `terraform init`:
+
+```bash
+aws dynamodb create-table \
+  --table-name terraform-lock \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST \
+  --region sa-east-1
+```
+
+#### 2. Detecção periódica de drift (recomendado)
+
+Adicione um job agendado no workflow que roda `terraform plan` periodicamente e alerta se houver diferenças. Qualquer mudança feita diretamente no console AWS aparece aqui antes de causar problema:
+
+```yaml
+on:
+  schedule:
+    - cron: '0 8 * * 1-5'  # segunda a sexta às 08:00 UTC
+```
+
+#### 3. Nunca alterar recursos diretamente no console AWS
+
+Qualquer mudança fora do Terraform (console, CLI, scripts avulsos) cria drift imediato. A única exceção aceita é emergência — e nesse caso o código deve ser atualizado logo em seguida para refletir a mudança.
+
+---
+
 ## Visão Geral
 
 ```
@@ -185,7 +247,7 @@ Cluster ECS e infraestrutura de suporte:
 Serviço Fargate completo:
 - Task definition com variáveis de ambiente configuráveis
 - Target Group HTTP + regra de roteamento no ALB por host header
-- CloudWatch Log Group com retenção de 3 dias
+- CloudWatch Log Group com retenção de 30 dias
 - Registro DNS automático via Route53 (CNAME para o ALB)
 - Autoscaling baseado em CPU e memória com cooldown de 300s
 
@@ -196,8 +258,8 @@ Serviço Fargate completo:
 | `container_port` | Porta exposta pelo container |
 | `app_dns` | Subdomínio que será criado no Route53 |
 | `max_capacity` | Capacidade máxima do autoscaling |
-| `cpu_treshold` | % CPU para escalar (padrão: 60) |
-| `mem_treshold` | % memória para escalar (padrão: 80) |
+| `cpu_threshold` | % CPU para escalar (padrão: 60) |
+| `mem_threshold` | % memória para escalar (padrão: 80) |
 
 ### `alb`
 Application Load Balancer externo:
@@ -314,11 +376,13 @@ O artefato `tfplan` é passado do stage `plan` para o `apply`.
 
 ### GitHub Actions (`.github/workflows/terraform.yml`)
 
-| Job | Trigger | Descrição |
-|---|---|---|
-| `plan` | Push em qualquer branch, PRs e `workflow_dispatch` | `terraform init` + `validate` + `plan` + estimativa de custo via Infracost |
-| `apply` | Após `plan` aprovado, somente em `main`/`master` | `terraform apply` com aprovação manual via GitHub Environments |
+| Job | Trigger | Depende de | Descrição |
+|---|---|---|---|
+| `validate` | Push em qualquer branch, PRs e `workflow_dispatch` | — | `terraform init -backend=false` + `validate` — roda sem credenciais AWS |
+| `plan` | Push em qualquer branch, PRs e `workflow_dispatch` | `validate` | `terraform init` + `plan` + estimativa de custo via Infracost |
+| `apply` | Somente em `main`/`master` | `plan` aprovado | `terraform apply` com aprovação manual via GitHub Environments |
 
+O job `validate` roda sem nenhuma credencial e garante que erros de sintaxe falhem rápido, antes de consumir as credenciais AWS.
 O `apply` só é executado em push para `main` ou `master` e exige aprovação manual de um revisor configurado no Environment do repositório.
 
 **Variáveis necessárias** — configure em **Settings → Secrets and variables → Actions**:

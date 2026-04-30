@@ -1,5 +1,5 @@
 resource "aws_codepipeline" "codepipeline" {
-  name     = format("%s-%s-%s-pipeline",var.alias, var.repo_name, var.pipeline_branch)
+  name     = format("%s-%s-%s-pipeline", var.alias, var.repo_name, var.pipeline_branch)
   role_arn = aws_iam_role.codepipeline_role.arn
 
   artifact_store {
@@ -17,8 +17,8 @@ resource "aws_codepipeline" "codepipeline" {
       version          = "1"
       output_artifacts = ["source_output"]
       configuration = {
-        RepositoryName = var.repo_name
-        BranchName     = var.pipeline_branch
+        RepositoryName       = var.repo_name
+        BranchName           = var.pipeline_branch
         PollForSourceChanges = false
       }
     }
@@ -41,27 +41,27 @@ resource "aws_codepipeline" "codepipeline" {
   stage {
     name = "Deploy"
     action {
-      name             = "DeployToECS"
-      category         = "Deploy"
-      owner            = "AWS"
-      provider         = "ECS"
-      version          = "1"
-      input_artifacts  = ["build_output"]  # Assumindo que o artefato de build é chamado "build_output"
+      name            = "DeployToECS"
+      category        = "Deploy"
+      owner           = "AWS"
+      provider        = "ECS"
+      version         = "1"
+      input_artifacts = ["build_output"] # Assumindo que o artefato de build é chamado "build_output"
 
       configuration = {
-        ClusterName        = var.cluster_name
-        ServiceName        = var.service_name  # Substitua pelo nome do seu serviço ECS
-        FileName           = "imagedefinitions.json"    # O nome do arquivo de definições de imagem ECS
-        DeploymentTimeout  = 15 // Outras configurações ECS conforme necessário
+        ClusterName       = var.cluster_name
+        ServiceName       = var.service_name        # Substitua pelo nome do seu serviço ECS
+        FileName          = "imagedefinitions.json" # O nome do arquivo de definições de imagem ECS
+        DeploymentTimeout = 15                      // Outras configurações ECS conforme necessário
       }
     }
   }
 
-  
+
 }
 
 resource "aws_s3_bucket" "codepipeline_bucket" {
-  bucket = format("%s-%s-%s-pipeline",var.alias, var.repo_name, var.pipeline_branch)
+  bucket = format("%s-%s-%s-pipeline", var.alias, var.repo_name, var.pipeline_branch)
 }
 
 
@@ -81,7 +81,7 @@ data "aws_iam_policy_document" "assume_role_pipeline" {
 
 
 resource "aws_iam_role" "codepipeline_role" {
-  name               = format("%s-%s-%s-pipeline-role",var.alias, var.repo_name, var.pipeline_branch)
+  name               = format("%s-%s-%s-pipeline-role", var.alias, var.repo_name, var.pipeline_branch)
   assume_role_policy = data.aws_iam_policy_document.assume_role_pipeline.json
 }
 
@@ -102,7 +102,7 @@ data "aws_iam_policy_document" "codepipeline_policy" {
       "${aws_s3_bucket.codepipeline_bucket.arn}/*"
     ]
   }
-  
+
   statement {
     effect = "Allow"
 
@@ -158,29 +158,29 @@ data "aws_iam_policy_document" "codepipeline_policy" {
   statement {
     effect = "Allow"
     resources = [
-        var.codecommit_repo_arn
+      var.codecommit_repo_arn
     ]
     actions = [
-        "codecommit:CancelUploadArchive",
-        "codecommit:GetBranch",
-        "codecommit:GetCommit",
-        "codecommit:GetRepository",
-        "codecommit:GetUploadArchiveStatus",
-        "codecommit:UploadArchive",
-        "codecommit:GitPull"
+      "codecommit:CancelUploadArchive",
+      "codecommit:GetBranch",
+      "codecommit:GetCommit",
+      "codecommit:GetRepository",
+      "codecommit:GetUploadArchiveStatus",
+      "codecommit:UploadArchive",
+      "codecommit:GitPull"
     ]
   }
 }
 
 resource "aws_iam_role_policy" "codepipeline_policy" {
-  name   = format("%s-%s-%s-pipeline-policy",var.alias, var.repo_name, var.pipeline_branch)
+  name   = format("%s-%s-%s-pipeline-policy", var.alias, var.repo_name, var.pipeline_branch)
   role   = aws_iam_role.codepipeline_role.id
   policy = data.aws_iam_policy_document.codepipeline_policy.json
 }
 
 
 resource "aws_iam_role" "codebuild_role" {
-  name               = format("%s-%s-%s-build-role",var.alias, var.repo_name, var.pipeline_branch)
+  name               = format("%s-%s-%s-build-role", var.alias, var.repo_name, var.pipeline_branch)
   assume_role_policy = data.aws_iam_policy_document.assume_role_build.json
 }
 
@@ -218,15 +218,15 @@ data "aws_iam_policy_document" "codebuild_policy" {
     actions   = ["ec2:CreateNetworkInterfacePermission"]
     resources = ["arn:aws:ec2:*:*:network-interface/*"]
 
-    
+
   }
   statement {
     effect = "Allow"
     resources = [
-        var.codecommit_repo_arn
+      var.codecommit_repo_arn
     ]
     actions = [
-        "codecommit:GitPull"
+      "codecommit:GitPull"
     ]
   }
   statement {
@@ -250,7 +250,7 @@ resource "aws_iam_role_policy_attachment" "codebuild_role_ecr_attachment" {
 }
 
 resource "aws_codebuild_project" "codebuild" {
-  name           = format("%s-%s-%s-build",var.alias, var.repo_name, var.pipeline_branch)
+  name           = format("%s-%s-%s-build", var.alias, var.repo_name, var.pipeline_branch)
   service_role   = aws_iam_role.codebuild_role.arn
   build_timeout  = "5"
   queued_timeout = "5"
@@ -260,19 +260,19 @@ resource "aws_codebuild_project" "codebuild" {
   }
 
   environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = "aws/codebuild/standard:7.0"
-    type                        = "LINUX_CONTAINER"
-    privileged_mode             = true
+    compute_type    = "BUILD_GENERAL1_SMALL"
+    image           = "aws/codebuild/standard:7.0"
+    type            = "LINUX_CONTAINER"
+    privileged_mode = true
     environment_variable {
       name  = "REPOSITORY_NAME"
-      value = format("%s-%s",var.alias, var.repo_name)  // Substitua por "gasfacil-bi" ou "gasfacil-sandbox-bi" conforme necessário
+      value = format("%s-%s", var.alias, var.repo_name) // Substitua por "gasfacil-bi" ou "gasfacil-sandbox-bi" conforme necessário
     }
   }
 
   source {
-    type            = "CODEPIPELINE"
-    buildspec       = "buildspec.yml"
+    type      = "CODEPIPELINE"
+    buildspec = "buildspec.yml"
   }
 }
 
@@ -292,17 +292,17 @@ data "aws_iam_policy_document" "assume_role_build" {
 
 
 resource "aws_cloudwatch_event_rule" "codecommit_event" {
-  name        = format("%s-%s-%s-event-rule",var.alias, var.repo_name, var.pipeline_branch)
+  name        = format("%s-%s-%s-event-rule", var.alias, var.repo_name, var.pipeline_branch)
   description = "Trigger for CodeCommit repo events"
 
   event_pattern = jsonencode({
-    source: ["aws.codecommit"],
-    detail-type: ["CodeCommit Repository State Change"],
-    resources: [var.codecommit_repo_arn],
-    detail: {
-      event: ["referenceCreated", "referenceUpdated"],
-      referenceName: [var.pipeline_branch],
-      referenceType: ["branch"]
+    source : ["aws.codecommit"],
+    detail-type : ["CodeCommit Repository State Change"],
+    resources : [var.codecommit_repo_arn],
+    detail : {
+      event : ["referenceCreated", "referenceUpdated"],
+      referenceName : [var.pipeline_branch],
+      referenceType : ["branch"]
     }
   })
 }
@@ -315,7 +315,7 @@ resource "aws_cloudwatch_event_target" "codepipeline_target" {
 }
 
 resource "aws_iam_role" "event_target_role" {
-  name = format("%s-%s-%s-event-target-role",var.alias, var.repo_name, var.pipeline_branch)
+  name = format("%s-%s-%s-event-target-role", var.alias, var.repo_name, var.pipeline_branch)
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -332,15 +332,15 @@ resource "aws_iam_role" "event_target_role" {
 }
 
 resource "aws_iam_policy" "event_target_policy" {
-  name = format("%s-%s-%s-event-target-policy",var.alias, var.repo_name, var.pipeline_branch)
+  name = format("%s-%s-%s-event-target-policy", var.alias, var.repo_name, var.pipeline_branch)
 
   policy = jsonencode({
-    Version: "2012-10-17",
-    Statement: [
+    Version : "2012-10-17",
+    Statement : [
       {
-        Action: "codepipeline:StartPipelineExecution",
-        Effect: "Allow",
-        Resource: aws_codepipeline.codepipeline.arn
+        Action : "codepipeline:StartPipelineExecution",
+        Effect : "Allow",
+        Resource : aws_codepipeline.codepipeline.arn
       },
     ],
   })
@@ -422,7 +422,7 @@ resource "aws_iam_role_policy_attachment" "event_target_policy_attachment" {
 #       target_group {
 #         name = var.target_group_name_green
 #       }
-      
+
 #     }
 #   }
 # }

@@ -5,7 +5,7 @@ resource "aws_lambda_function" "func" {
   image_uri     = var.image_uri
 
   image_config {
-    
+
   }
 }
 

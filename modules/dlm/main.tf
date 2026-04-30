@@ -37,7 +37,7 @@ data "aws_iam_policy_document" "dlm_lifecycle" {
     actions   = ["ec2:CreateTags"]
     resources = ["arn:aws:ec2:*::snapshot/*"]
   }
-  
+
 }
 
 resource "aws_iam_role_policy" "dlm_lifecycle" {

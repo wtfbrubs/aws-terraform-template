@@ -1,14 +1,12 @@
-variable "region" {
-  description = "AWS region"
-}
-
 variable "vpc_cidr_block" {
   description = "CIDR block para a VPC"
+  type        = string
   default     = "100.121.0.0/16"
 }
 
 variable "vpc_name" {
   description = "Name tag for the VPC"
+  type        = string
 }
 
 variable "availability_zones" {

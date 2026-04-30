@@ -1,11 +1,12 @@
-
 variable "rds_name" {
-  description = "nome da database"
+  description = "Nome da instância RDS"
+  type        = string
   default     = "rds-database"
 }
 
 variable "user_name" {
-  description = "nome do usuário master"
+  description = "Nome do usuário master"
+  type        = string
   default     = "admin"
 }
 
@@ -14,11 +15,13 @@ variable "user_name" {
 # Não é necessário (nem recomendado) gerenciar a senha pelo Terraform.
 
 variable "private_subnet_ids" {
-  description = "lista das subnets do subnet group"
+  description = "Lista de IDs das subnets privadas para o subnet group"
+  type        = list(string)
 }
 
 variable "vpc_id" {
-  type = string
+  description = "ID da VPC"
+  type        = string
 }
 
 # Usado para restringir o security group do RDS ao tráfego interno da VPC.

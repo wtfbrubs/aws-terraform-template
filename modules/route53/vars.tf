@@ -1,3 +1,4 @@
 variable "dominio" {
-  description = "Domino da Zona"
+  description = "Domínio da Hosted Zone"
+  type        = string
 }

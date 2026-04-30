@@ -64,12 +64,12 @@ resource "aws_security_group" "ec2_sg" {
 
 
 resource "aws_instance" "ec2" {
-  depends_on=[aws_key_pair.key, aws_security_group.ec2_sg ]
+  depends_on    = [aws_key_pair.key, aws_security_group.ec2_sg]
   ami           = var.ami_id
   instance_type = var.instance_type
   key_name      = aws_key_pair.key.id
-  
-  subnet_id              = var.subnet_id
+
+  subnet_id                   = var.subnet_id
   associate_public_ip_address = var.associate_public_ip
 
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
@@ -77,8 +77,8 @@ resource "aws_instance" "ec2" {
   root_block_device {
     volume_size = var.root_volume_size
     volume_type = "gp3"
-    encrypted = true
-    kms_key_id = aws_kms_key.kms_key.arn
+    encrypted   = true
+    kms_key_id  = aws_kms_key.kms_key.arn
   }
 
   tags = {
@@ -95,12 +95,12 @@ resource "aws_eip" "ec2_eip" {
 }
 
 resource "aws_ebs_volume" "volume1" {
-  depends_on=[aws_instance.ec2 ]
+  depends_on        = [aws_instance.ec2]
   availability_zone = aws_instance.ec2.availability_zone
   size              = 40
-  type = "gp3"
-  encrypted = true
-  kms_key_id = aws_kms_key.kms_key.arn
+  type              = "gp3"
+  encrypted         = true
+  kms_key_id        = aws_kms_key.kms_key.arn
   tags = {
     Name = format("%s-ebs-1", var.instance_name)
   }
